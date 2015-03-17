@@ -1,4 +1,4 @@
-gulp-ejs-template
+gulp-mejs
 ====
 > Mejs plugin for gulp
 
@@ -26,6 +26,8 @@ gulp.task('mejs', function () {
   .pipe(gulp.dest('test'));
 });
 ```
+
+options and Mejs class API: https://github.com/teambition/mejs
 
 ## Demo
 
@@ -162,21 +164,6 @@ precompile to `test/templates.js`(Run it in node.js/io.js/browers):
   return Mejs;
 }));
 ```
-
-
-## API
-
-```js
-var gulpMejs = require('gulp-mejs');
-
-gulp.task('mejs', function () {
-  return gulp.src('test/fixtures/*.html')
-    .pipe(gulpMejs({/*options*/}))
-    .pipe(gulp.dest('test'));
-});
-```
-
-options and Mejs class API: https://github.com/teambition/mejs
 
 ## License
 
