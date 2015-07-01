@@ -4,6 +4,8 @@
 /* global module, define, window */
 /* jshint -W069, -W032*/
 
+// Mejs is a compiled templates class, it can be run in node.js or browers
+
 ;(function(root, factory) {
   'use strict';
 
@@ -14,6 +16,7 @@
   'use strict';
 
   var hasOwn = Object.prototype.hasOwnProperty;
+  var templates = {};
   var htmlEscapes = {
     '&': '&amp;',
     '<': '&lt;',
@@ -24,34 +27,20 @@
   };
 
   function Mejs(locals) {
-    var templates = {};
     this.locals = locals || {};
-    this.templates = templates;
-
-    templates['header'] = function(it, __tplName) {
-      var ctx = this, __output = "";
-      var include = function(tplName, data) { return ctx.render(ctx.resolve(__tplName, tplName), data); }
-      ;__output += "<p>";;__output += ctx.escape(locals.title || 'gulp');__output += " module</p>\n";;__output = [__output, include('user.html', locals.user)].join("");__output += "\n";
-      return __output.trim();
-    };
-
-    templates['user-list'] = function(it, __tplName) {
-      var ctx = this, __output = "";
-      ;__output += "<ul>\n  ";; locals.users.forEach(function(user) { ;__output += "    <li>\n      ";;__output += ctx.escape(user.name);__output += "\n    </li>\n  ";; }) ;__output += "</ul>\n";
-      return __output.trim();
-    };
-
-    templates['user'] = function(it, __tplName) {
-      var ctx = this, __output = "";
-      ;__output += "<h1>";;__output += ctx.escape(locals.name);__output += "</h1>\n";
-      return __output.trim();
-    };
+    this.templates = copy({}, templates);
   }
 
+  Mejs.import = function(tpls) {
+    copy(templates, tpls);
+    return this;
+  };
+
   var proto = Mejs.prototype;
+  proto.copy = copy;
 
   proto.render = function(tplName, data) {
-    return this.get(tplName).call(this, copy(copy({}, this.locals), data), tplName);
+    return this.get(tplName).call(this, this.copy(data, this.locals), tplName);
   };
 
   proto.get = function(tplName) {
@@ -82,11 +71,14 @@
     return this;
   };
 
-  proto.resolve = function(from, to) {
-    from = toString(from).replace(/[^\/]*\.?[^\/]*$/, '').replace(/\/?$/, '\/');
-    to = (to[0] === '/' ? to : (from + to)).replace(/\/\.?\/+/g, '\/');
-    while (/\/\.\.\//.test(to)) to = to.replace(/[^\/]*\/\.\.\//g, '');
-    return to.replace(/^[\.\/]*/, '');
+  proto.resolve = function(parent, current) {
+    parent = toString(parent);
+    current = toString(current).replace(/^([^\.\/])/, '\/$1');
+    current = /^\//.test(current) && !/\/$/.test(parent) ?
+      current : (parent.replace(/[^\/]*\.?[^\/]*$/, '').replace(/\/?$/, '\/') + current);
+    current = current.replace(/\/\.?\/+/g, '\/');
+    while (/\/\.\.\//.test(current)) current = current.replace(/[^\/]*\/\.\.\//g, '');
+    return current.replace(/^[\.\/]*/, '');
   };
 
   proto.escape = function(str) {
@@ -95,17 +87,36 @@
     });
   };
 
-  function copy(to, from) {
-    if (!from) return to;
-    for (var key in from) {
-      if (hasOwn.call(from, key)) to[key] = from[key];
+  function copy(dst, src) {
+    dst = dst || {};
+    for (var key in src) {
+      if (!hasOwn.call(dst, key) && hasOwn.call(src, key)) dst[key] = src[key];
     }
-    return to;
+    return dst;
   }
 
   function toString(str) {
     return str == null ? '' : String(str);
   }
+
+  templates['header'] = function(it, __tplName) {
+    var ctx = this, __output = "";
+    var include = function(tplName, data) { return ctx.render(ctx.resolve(__tplName, tplName), ctx.copy(data, it)); }
+    ;__output += "<p>";;__output += ctx.escape(locals.title || 'gulp');__output += " module</p>\n";;__output = [__output, include('user.html', locals.user)].join("");__output += "\n";
+    return __output.trim();
+  };
+
+  templates['user-list'] = function(it, __tplName) {
+    var ctx = this, __output = "";
+    ;__output += "<ul>\n  ";; locals.users.forEach(function(user) { ;__output += "    <li>\n      ";;__output += ctx.escape(user.name);__output += "\n    </li>\n  ";; }) ;__output += "</ul>\n";
+    return __output.trim();
+  };
+
+  templates['user'] = function(it, __tplName) {
+    var ctx = this, __output = "";
+    ;__output += "<h1>";;__output += ctx.escape(locals.name);__output += "</h1>\n";
+    return __output.trim();
+  };
 
   return Mejs;
 }));
