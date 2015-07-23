@@ -17,5 +17,14 @@ module.exports = function () {
       .pipe(gulp.dest('test'))
   })
 
-  gulp.task('test', gulpSequence('clean', 'mejs'))
+  gulp.task('render', function () {
+    return gulp.src('test/fixtures/*.html')
+    .pipe(gulpMejs.render('header', {
+      title: 'test render',
+      user: {name: 'zensh'}
+    }))
+    .pipe(gulp.dest('test'))
+  })
+
+  gulp.task('test', gulpSequence('clean', 'mejs', 'render'))
 }
