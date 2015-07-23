@@ -2,6 +2,7 @@
 //
 // **License:** MIT
 /* global module, define, window */
+/* jshint -W069, -W032*/
 
 // Mejs is a compiled templates class, it can be run in node.js or browers
 
@@ -102,7 +103,7 @@
   templates['header'] = function(it, __tplName) {
     var ctx = this, __output = "";
     var include = function(tplName, data) { return ctx.render(ctx.resolve(__tplName, tplName), ctx.copy(data, it)); }
-    ;__output += "<p>";;__output += ctx.escape(it.title || 'gulp');__output += " module</p>\n";;__output = [__output, include('user', it.user)].join("");__output += "\n";
+    ;__output += "<p class=\"test\">";;__output += ctx.escape(it.title || 'gulp');__output += " module</p>\n";;__output = [__output, include('user', it.user)].join("");__output += "\n";
     return __output.trim();
   };
 
