@@ -26,11 +26,29 @@ gulp.task('mejs', function () {
   .pipe(gulp.dest('test'));
 })
 
-gulp.task('render', function () {
+gulp.task('render-page', function () {
   return gulp.src('test/fixtures/*.html')
   .pipe(gulpMejs.render('header', {
     title: 'test render',
     user: {name: 'zensh'}
+  }))
+  .pipe(gulp.dest('test'))
+})
+
+gulp.task('render-pages', function () {
+  return gulp.src('test/fixtures/*.html')
+  .pipe(gulpMejs.render(['header', 'user'], function (tplName) {
+    switch (tplName) {
+      case 'header':
+        return {
+          title: 'test render',
+          user: {name: 'zensh'}
+        }
+      case 'user':
+        return {
+          name: 'test-man'
+        }
+    }
   }))
   .pipe(gulp.dest('test'))
 })
@@ -91,11 +109,11 @@ precompile to `test/templates.js`(Run it in node.js/io.js/browers):
 
   function Mejs (locals) {
     this.locals = locals || {}
-    this.templates = copy({}, templates)
+    this.templates = copy({}, templates, true)
   }
 
   Mejs.import = function (tpls) {
-    copy(templates, tpls)
+    copy(templates, tpls, true)
     return this
   }
 
@@ -103,16 +121,17 @@ precompile to `test/templates.js`(Run it in node.js/io.js/browers):
   proto.copy = copy
 
   proto.render = function (tplName, data) {
-    return this.get(tplName).call(this, this.copy(data, this.locals), tplName)
+    var template = this.get(tplName)
+    if (typeof template !== 'function') throw new Error(tplName + ' is not found')
+    return template.call(this, this.copy(data, this.locals), tplName)
   }
 
   proto.get = function (tplName) {
-    if (!hasOwn.call(this.templates, tplName)) throw new Error(tplName + ' is not found')
-    return this.templates[tplName]
+    return hasOwn.call(this.templates, tplName) ? this.templates[tplName] : null
   }
 
-  proto.add = function (tplName, tplFn) {
-    if (hasOwn.call(this.templates, tplName)) throw new Error(tplName + ' exist')
+  proto.add = function (tplName, tplFn, overwrite) {
+    if (!overwrite && hasOwn.call(this.templates, tplName)) throw new Error(tplName + ' exist')
     this.templates[tplName] = tplFn
     return this
   }
@@ -122,22 +141,23 @@ precompile to `test/templates.js`(Run it in node.js/io.js/browers):
     return this
   }
 
-  proto.import = function (ns, mejs) {
+  proto.import = function (ns, mejs, overwrite) {
     if (typeof ns !== 'string') {
+      overwrite = mejs
       mejs = ns
       ns = '/'
     } else ns = ns.replace(/\/?$/, '\/')
     for (var tplName in mejs.templates) {
       if (hasOwn.call(mejs.templates, tplName)) {
-        this.add(this.resolve(ns, tplName), mejs.get(tplName))
+        this.add(this.resolve(ns, tplName), mejs.get(tplName), overwrite)
       }
     }
     return this
   }
 
   proto.resolve = function (parent, current) {
-    parent = toString(parent)
-    current = toString(current).replace(/^([^\.\/])/, '\/$1')
+    parent = this.stringify(parent)
+    current = this.stringify(current).replace(/^([^\.\/])/, '\/$1')
     current = /^\//.test(current) && !/\/$/.test(parent) ?
       current : (parent.replace(/[^\/]*\.?[^\/]*$/, '').replace(/\/?$/, '\/') + current)
     current = current.replace(/\/\.?\/+/g, '\/')
@@ -146,40 +166,42 @@ precompile to `test/templates.js`(Run it in node.js/io.js/browers):
   }
 
   proto.escape = function (str) {
-    return toString(str).replace(/[&<>"'`]/g, function (match) {
+    return this.stringify(str).replace(/[&<>"'`]/g, function (match) {
       return htmlEscapes[match]
     })
   }
 
-  function copy (dst, src) {
+  proto.stringify = function (str) {
+    return str == null ? '' : String(str)
+  }
+
+  function copy (dst, src, overwrite) {
     dst = dst || {}
     for (var key in src) {
-      if (!hasOwn.call(dst, key) && hasOwn.call(src, key)) dst[key] = src[key]
+      if (hasOwn.call(src, key) && (overwrite || !hasOwn.call(dst, key))) dst[key] = src[key]
     }
     return dst
   }
 
-  function toString (str) {
-    return str == null ? '' : String(str)
-  }
-
-  templates['header'] = function(it, __tplName) {
-    var ctx = this, __output = "";
-    var include = function(tplName, data) { return ctx.render(ctx.resolve(__tplName, tplName), ctx.copy(data, it)); }
-    ;__output += "<p>";;__output += ctx.escape(it.title || 'gulp');__output += " module</p>\n";;__output = [__output, include('user', it.user)].join("");__output += "\n";
-    return __output.trim();
+  templates['header'] = function (it, __tplName) {
+    var ctx = this, __output = ""
+    var include = function (tplName, data) { return ctx.render(ctx.resolve(__tplName, tplName), ctx.copy(data, it)) }
+    ;__output += "<p class=\"test\">";;__output += ctx.escape(it.title || 'gulp');__output += " module</p>\n";;__output += ctx.stringify(include('user', it.user));__output += "\n";
+    return __output.trim()
   };
 
-  templates['user-list'] = function(it, __tplName) {
-    var ctx = this, __output = "";
-    ;__output += "<ul>\n  ";; it.users.forEach(function(user) { ;__output += "    <li>\n      ";;__output += ctx.escape(user.name);__output += "\n    </li>\n  ";; }) ;__output += "</ul>\n";
-    return __output.trim();
+  templates['user-list'] = function (it, __tplName) {
+    var ctx = this, __output = ""
+    ;__output += "<ul>\n  ";;it.users.forEach(function(user) {
+  ;__output += "    <li>\n      ";;__output += ctx.escape(user.name);__output += "\n    </li>\n  ";;})
+  ;__output += "</ul>\n";
+    return __output.trim()
   };
 
-  templates['user'] = function(it, __tplName) {
-    var ctx = this, __output = "";
+  templates['user'] = function (it, __tplName) {
+    var ctx = this, __output = ""
     ;__output += "<h1>";;__output += ctx.escape(it.name);__output += "</h1>\n";
-    return __output.trim();
+    return __output.trim()
   };
 
   return Mejs

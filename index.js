@@ -18,14 +18,22 @@ module.exports = function (options) {
   })
 }
 
-module.exports.render = function (tplName, data, options) {
+module.exports.render = function (tplNames, dataFn, options) {
   return through.obj(gatherFiles, function (callback) {
     if (!this.gatheredFiles) return callback(new gutil.PluginError(packageName, 'no file exist'))
+    var stream = this
     var mejs = mejsCompile.initMejs(mejsCompile.precompile(this.gatheredFiles, options), options)
-    this.push(new gutil.File({
-      path: tplName + '.html',
-      contents: new Buffer(mejs.renderEx(tplName, data))
-    }))
+    if (!Array.isArray(tplNames)) tplNames = [tplNames]
+    if (typeof dataFn !== 'function') {
+      var data = dataFn
+      dataFn = function () { return data }
+    }
+    tplNames.forEach(function (tplName) {
+      stream.push(new gutil.File({
+        path: tplName + '.html',
+        contents: new Buffer(mejs.renderEx(tplName, dataFn(tplName)))
+      }))
+    })
     callback()
   })
 }
