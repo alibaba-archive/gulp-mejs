@@ -1,7 +1,7 @@
 {
   "name": "gulp-mejs",
   "description": "Mejs plugin for gulp.",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "main": "index.js",
   "homepage": "https://github.com/teambition/gulp-mejs",
   "author": [
@@ -22,22 +22,22 @@
     "url": "https://github.com/teambition/gulp-mejs/issues"
   },
   "engines": {
-    "node": ">= 0.10.0"
+    "node": ">= 0.12"
   },
   "scripts": {
     "test": "standard && gulp test"
   },
   "dependencies": {
     "gulp-util": "^3.0.7",
-    "mejs": "^0.6.3",
-    "through2": "^2.0.0"
+    "mejs": "^0.8.1",
+    "through2": "^2.0.1"
   },
   "devDependencies": {
-    "gulp": "^3.9.0",
+    "gulp": "^3.9.1",
     "gulp-rimraf": "^0.2.0",
-    "gulp-sequence": "^0.4.4",
-    "merge2": "^1.0.0",
-    "standard": "^5.4.1"
+    "gulp-sequence": "^0.4.6",
+    "merge2": "^1.0.2",
+    "standard": "^8.0.0"
   },
   "standard": {
     "ignore": [
